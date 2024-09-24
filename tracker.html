@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>B06 Camo Tracker</title>
+    <!-- Link to Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Styles */
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0d0d0d;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #f0f0f0;
+            background-color: #1a1a1a;
+            padding: 20px;
+            margin: 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .progress {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #cccccc;
+        }
+
+        .buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .category {
+            margin-bottom: 30px;
+        }
+
+        .category h2 {
+            background-color: #1a1a1a;
+            padding: 10px;
+            margin: 0;
+            cursor: pointer;
+            position: relative;
+            border-bottom: 1px solid #333;
+        }
+
+        .category h2::after {
+            content: '▼';
+            position: absolute;
+            right: 20px;
+            font-size: 14px;
+            transition: transform 0.3s;
+        }
+
+        .category.expanded h2::after {
+            transform: rotate(180deg);
+        }
+
+        .weapon-list {
+            display: none;
+            padding-left: 0;
+            list-style: none;
+            margin: 0;
+        }
+
+        .category.expanded .weapon-list {
+            display: block;
+        }
+
+        .weapon {
+            margin-bottom: 10px;
+            background-color: #262626;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .weapon h3 {
+            cursor: pointer;
+            margin: 0;
+            padding: 10px 20px;
+            position: relative;
+            background-color: #333;
+            color: #fff;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .weapon h3 .weapon-progress {
+            font-size: 14px;
+            color: #cccccc;
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .weapon h3::after {
+            content: '▼';
+            position: absolute;
+            right: 50px;
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+
+        .weapon.expanded h3::after {
+            transform: rotate(180deg);
+        }
+
+        .weapon.completed h3 {
+            background-color: #28a745; /* Green background */
+            color: #fff;
+        }
+
+        .camo-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: none;
+            background-color: #1a1a1a;
+        }
+
+        .weapon.expanded .camo-list {
+            display: block;
+        }
+
+        .camo-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid #333;
+            transition: background-color 0.2s;
+        }
+
+        .camo-item:hover {
+            background-color: #2e2e2e;
+        }
+
+        .camo-item:last-child {
+            border-bottom: none;
+        }
+
+        .camo-item input[type="checkbox"] {
+            margin-right: 15px;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+
+        .camo-item label {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+
+        .button {
+            display: inline-block;
+            margin: 5px;
+            background-color: #007acc;
+            color: #ffffff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 16px;
+        }
+
+        .button:hover {
+            background-color: #005f99;
+        }
+
+        /* Active state for Hide Completed Weapons button */
+        .button.active {
+            background-color: #ff704d;
+        }
+
+        .hidden-weapon {
+            display: none;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>B06 Camo Tracker</h1>
+
+    <div class="container">
+
+        <div class="progress">
+            You have unlocked <span id="unlocked-count">0</span> out of <span id="total-count">0</span> camos.
+        </div>
+
+        <div class="buttons">
+            <button class="button" id="hide-completed-button" onclick="toggleHideCompleted()">Hide Completed Weapons</button>
+            <button class="button" onclick="resetProgress()">Reset Progress</button>
+        </div>
+
+        <div id="categories">
+            <!-- Categories and camos will be generated here -->
+        </div>
+
+    </div>
+
+    <script>
+        // JavaScript Code
+
+        // List of camos
+        const camos = [
+            'Desert Strike',
+            'Urban Digital',
+            'Woodland',
+            'Dragon',
+            'Splinter',
+            'Tiger',
+            'Stripes',
+            'Reptile',
+            'Skulls',
+            'Gold',
+            'Platinum',
+            'Damascus',
+            'Obsidian',
+        ];
+
+        // Weapon categories with weapons and their camos
+        const camoCategories = {
+            'Assault Rifles': {
+                'M4A1': camos,
+                'AK-47': camos,
+                'FAL': camos,
+                // Add more assault rifles here
+            },
+            'Snipers': {
+                'HDR': camos,
+                'AX-50': camos,
+                'Dragunov': camos,
+                // Add more snipers here
+            },
+            'Shotguns': {
+                'Model 680': camos,
+                'R9-0': camos,
+                '725': camos,
+                // Add more shotguns here
+            },
+            'Submachine Guns': {
+                'MP5': camos,
+                'Uzi': camos,
+                'P90': camos,
+                // Add more SMGs here
+            },
+            'Light Machine Guns': {
+                'PKM': camos,
+                'M91': camos,
+                'SA87': camos,
+                // Add more LMGs here
+            },
+            'Pistols': {
+                'X16': camos,
+                '1911': camos,
+                'M19': camos,
+                // Add more pistols here
+            },
+            'Melee': {
+                'Combat Knife': camos,
+                // Add more melee weapons here
+            },
+            'Launchers': {
+                'PILA': camos,
+                'Strela-P': camos,
+                'RPG-7': camos,
+                // Add more launchers here
+            }
+        };
+
+        const categoriesElement = document.getElementById('categories');
+        const unlockedCountElement = document.getElementById('unlocked-count');
+        const totalCountElement = document.getElementById('total-count');
+        const hideCompletedButton = document.getElementById('hide-completed-button');
+
+        // Load saved progress from localStorage
+        let unlockedCamos = JSON.parse(localStorage.getItem('unlockedCamos')) || [];
+        let hideCompleted = JSON.parse(localStorage.getItem('hideCompleted')) || false;
+
+        // Calculate total camos and weapon camo counts
+        let totalCamos = 0;
+        let weaponCamoCounts = {}; // To store counts for each weapon
+
+        for (const [categoryName, weapons] of Object.entries(camoCategories)) {
+            for (const [weaponName, weaponCamos] of Object.entries(weapons)) {
+                totalCamos += weaponCamos.length;
+                weaponCamoCounts[weaponName] = weaponCamos.length;
+            }
+        }
+
+        // Update progress display
+        function updateProgress() {
+            unlockedCountElement.textContent = unlockedCamos.length;
+            totalCountElement.textContent = totalCamos;
+            updateWeaponProgress();
+        }
+
+        // Update weapon progress indicators
+        function updateWeaponProgress() {
+            document.querySelectorAll('.weapon').forEach(weaponDiv => {
+                const weaponName = weaponDiv.dataset.weaponName;
+                const totalWeaponCamos = weaponCamoCounts[weaponName];
+                const unlockedWeaponCamos = unlockedCamos.filter(camoId => camoId.startsWith(weaponName + '-')).length;
+
+                const progressText = `${unlockedWeaponCamos}/${totalWeaponCamos}`;
+                const progressElement = weaponDiv.querySelector('.weapon-progress');
+                progressElement.textContent = progressText;
+
+                // Change weapon header color if completed
+                if (unlockedWeaponCamos === totalWeaponCamos) {
+                    weaponDiv.classList.add('completed');
+                } else {
+                    weaponDiv.classList.remove('completed');
+                }
+
+                // Hide weapon if completed and hideCompleted is true
+                if (hideCompleted && unlockedWeaponCamos === totalWeaponCamos) {
+                    weaponDiv.classList.add('hidden-weapon');
+                } else {
+                    weaponDiv.classList.remove('hidden-weapon');
+                }
+            });
+        }
+
+        // Create a camo item element
+        function createCamoItem(uniqueCamoId, camoName) {
+            const camoItem = document.createElement('li');
+            camoItem.className = 'camo-item';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = uniqueCamoId;
+            checkbox.checked = unlockedCamos.includes(uniqueCamoId);
+
+            // Update progress when checkbox is changed
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    unlockedCamos.push(uniqueCamoId);
+                } else {
+                    unlockedCamos = unlockedCamos.filter(camo => camo !== uniqueCamoId);
+                }
+                localStorage.setItem('unlockedCamos', JSON.stringify(unlockedCamos));
+                updateProgress();
+            });
+
+            const label = document.createElement('label');
+            label.htmlFor = uniqueCamoId;
+            label.textContent = camoName;
+
+            camoItem.appendChild(checkbox);
+            camoItem.appendChild(label);
+
+            return camoItem;
+        }
+
+        // Initialize the camo list
+        function initCamoList() {
+            for (const [categoryName, weapons] of Object.entries(camoCategories)) {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+
+                const categoryHeader = document.createElement('h2');
+                categoryHeader.textContent = categoryName;
+
+                // Add click event to toggle weapon list
+                categoryHeader.addEventListener('click', function() {
+                    categoryDiv.classList.toggle('expanded');
+                });
+
+                categoryDiv.appendChild(categoryHeader);
+
+                const weaponList = document.createElement('ul');
+                weaponList.className = 'weapon-list';
+
+                for (const [weaponName, weaponCamos] of Object.entries(weapons)) {
+                    const weaponDiv = document.createElement('li');
+                    weaponDiv.className = 'weapon';
+                    weaponDiv.dataset.weaponName = weaponName;
+
+                    const weaponHeader = document.createElement('h3');
+                    weaponHeader.textContent = weaponName;
+
+                    const weaponProgress = document.createElement('span');
+                    weaponProgress.className = 'weapon-progress';
+                    weaponHeader.appendChild(weaponProgress);
+
+                    // Add click event to toggle camo list
+                    weaponHeader.addEventListener('click', function() {
+                        weaponDiv.classList.toggle('expanded');
+                    });
+
+                    weaponDiv.appendChild(weaponHeader);
+
+                    const camoListElement = document.createElement('ul');
+                    camoListElement.className = 'camo-list';
+
+                    weaponCamos.forEach(camoName => {
+                        // Create a unique identifier by combining weapon and camo name
+                        const uniqueCamoId = `${weaponName}-${camoName}`;
+                        const camoItem = createCamoItem(uniqueCamoId, camoName);
+                        camoListElement.appendChild(camoItem);
+                    });
+
+                    weaponDiv.appendChild(camoListElement);
+                    weaponList.appendChild(weaponDiv);
+                }
+
+                categoryDiv.appendChild(weaponList);
+                categoriesElement.appendChild(categoryDiv);
+            }
+            updateProgress();
+            updateHideCompletedButton();
+        }
+
+        // Reset progress
+        function resetProgress() {
+            if (confirm('Are you sure you want to reset your progress?')) {
+                unlockedCamos = [];
+                localStorage.removeItem('unlockedCamos');
+                document.querySelectorAll('.camo-item input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                updateProgress();
+            }
+        }
+
+        // Toggle hide/show completed weapons
+        function toggleHideCompleted() {
+            hideCompleted = !hideCompleted;
+            localStorage.setItem('hideCompleted', JSON.stringify(hideCompleted));
+            updateWeaponProgress();
+            updateHideCompletedButton();
+        }
+
+        // Update the Hide Completed Weapons button text and appearance
+        function updateHideCompletedButton() {
+            if (hideCompleted) {
+                hideCompletedButton.textContent = 'Show Completed Weapons';
+                hideCompletedButton.classList.add('active');
+            } else {
+                hideCompletedButton.textContent = 'Hide Completed Weapons';
+                hideCompletedButton.classList.remove('active');
+            }
+        }
+
+        // Initialize the page
+        initCamoList();
+    </script>
+
+</body>
+</html>
